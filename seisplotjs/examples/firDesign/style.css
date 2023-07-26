@@ -1,0 +1,11 @@
+div.fftfir {
+  height: 500px;
+}
+
+sp-spectra {
+  height: 250px;
+}
+
+sp-seismograph {
+  height: 300px;
+}
