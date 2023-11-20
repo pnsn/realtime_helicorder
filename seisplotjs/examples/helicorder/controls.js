@@ -47,9 +47,9 @@ export function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
   if (! loadAndPlotFun) {
     throw new Error("loadandPlotFun must be defined");
   }
-    if (! redrawFun) {
-      throw new Error("redrawFun must be defined");
-    }
+  if (! redrawFun) {
+    throw new Error("redrawFun must be defined");
+  }
   document.querySelector("button#goheli").addEventListener("click", () => {
     document.querySelector("#heli").setAttribute("style", "display: block;");
     document.querySelector("#seismograph").setAttribute("style", "display: none;");
@@ -232,14 +232,13 @@ export function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
     handleAmpChange(config, value, redrawFun);
   });
 
-  document.querySelector("input#percentAmp").addEventListener("click",  function(d) {
-      let value = document.querySelector("input#percentAmpSlider").value;
-      handleAmpChange(config, `${value}%`, redrawFun);
-    });
-  document.querySelector("#percentAmpSlider").addEventListener("input",  function(d) {
-    let value = Number(document.querySelector("#percentAmpSlider").value);
-    handleAmpChange(config, `${value}%`, redrawFun);
-  });
+  document.querySelector("input#percentAmp").addEventListener("click",  updateAmpPercent);
+  document.querySelector("#percentAmpSlider").addEventListener("input",  updateAmpPercent);
+  function updateAmpPercent() {
+    let percStr = `${document.querySelector("input#percentAmpSlider").value}%`;
+    document.querySelector("#percentValue").textContent = percStr;
+    handleAmpChange(config, percStr, redrawFun);
+  }
 
   document.querySelector("input#minmax").addEventListener("change", () => {
     config.dominmax = document.querySelector("input#minmax").checked;
