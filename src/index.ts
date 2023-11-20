@@ -25,7 +25,9 @@ const bandInstCodeList = ['HN', 'HH', 'LH'];
 // @param duration: luxon Duration for the time value of the date chooser
 // TODO: duration is actually not a Duration here, it's a string that gets converted into a duration. Fix!
 function updateDateChooser(time: string = state.endTime, duration: string = state.duration) {
-	let dateChooser = document.querySelector("sp-datetime");
+	const DateTimeChooser = sp.datechooser["DateTimeChooser"];
+	// For some reason, the DateTimerChooser variable in sp doesn't register as a class
+	let dateChooser : typeof DateTimeChooser = document.querySelector("sp-datetime");
 	if (time && duration) {
 		let luxonDateTime : DateTime = sp.util.isoToDateTime(time);
 		let luxonDuration : Duration = luxon.Duration.fromISO(duration);
@@ -64,6 +66,10 @@ function handleAmpChange(config, value, redrawFun) {
 }
 
 function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
+	console.log("-------------------- Looking at DateChooser! --------------------------");
+	console.log(Object.keys(sp.datechooser));
+	console.log(sp.datechooser["DateTimeChooser"]);
+
 	if (!loadAndPlotFun) {
 		throw new Error("loadandPlotFun must be defined");
 	}
