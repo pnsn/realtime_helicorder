@@ -94,17 +94,7 @@ function handleAmpChange(config : Config, amplitudeType : AmpType, value : numbe
 	redraw();
 }
 
-function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
-	console.log("-------------------- Looking at DateChooser! --------------------------");
-	console.log(Object.keys(sp.datechooser));
-	console.log(sp.datechooser["DateTimeChooser"]);
-
-	if (!loadAndPlotFun) {
-		throw new Error("loadandPlotFun must be defined");
-	}
-	if (!redrawFun) {
-		throw new Error("redrawFun must be defined");
-	}
+function setupEventHandlers(config) {
 	document.querySelector("button#goheli").addEventListener("click", () => {
 		document.querySelector("#heli").setAttribute("style", "display: block;");
 		document.querySelector("#seismograph").setAttribute("style", "display: none;");
@@ -146,7 +136,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		button.checked = sta === config.station;
 		button.addEventListener('click', event => {
 			config.station = sta;
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -173,7 +163,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 				config.altOrientationCode = "";
 			}
 			console.log(`click ${config.orientationCode} ${config.altOrientationCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -204,7 +194,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 			config.bandCode = bandinst.charAt(0);
 			config.instCode = bandinst.charAt(1);
 			console.log(`click ${config.bandCode}${config.instCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -223,7 +213,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		button.addEventListener('click', event => {
 			config.locCode = locCode;
 			console.log(`click ${config.locCode} ${config.bandCode}${config.instCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -231,14 +221,14 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		config.endTime = getNowTime().toISO();
 		console.log(`now ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadToday").addEventListener("click", function (d) {
 		config.endTime = luxon.DateTime.utc().endOf('day').plus({ millisecond: 1 }).toISO();
 		console.log(`today ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadPrev").addEventListener("click", function (d) {
@@ -251,7 +241,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		config.endTime = e.minus({ days: 1 }).toISO();
 		console.log(`prev ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadNext").addEventListener("click", function (d) {
@@ -264,7 +254,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		config.endTime = e.plus({ day: 1 }).toISO();
 		console.log(`next ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("input#maxAmp").addEventListener("click", function (d) {
@@ -295,13 +285,14 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 		handleAmpChange(config, AmpType.PERCENT, percValue);
 	}
 
-	document.querySelector("input#minmax").addEventListener("change", () => {
+	document.querySelector("input#minmax").addEventListener("change", async () => {
 		config.dominmax = document.querySelector("input#minmax").checked;
-		loadAndPlotFun(config).then(() => { enableFiltering(config.heliDataIsMinMax) });
+		await loadAndPlot(config);
+		enableFiltering(config.heliDataIsMinMax);
 	});
 	document.querySelector("input#rmean").addEventListener("change", () => {
 		config.rmean = document.querySelector("input#rmean").checked;
-		redrawFun(config);
+		redraw();
 	});
 
 	document.querySelector("input#allpass").addEventListener("change", () => {
@@ -1120,13 +1111,12 @@ let savedData = {
 	config: state
 };
 
-function loadAndPlot(config) {
+async function loadAndPlot(config) {
 	updatePageForConfig(config);
-	doPlot(config).then(hash => {
-		if (hash) {
-			savedData = hash;
-		}
-	});
+	let hash = await doPlot(config);
+	if (hash) {
+		savedData = hash;
+	}
 };
 
 function redraw() {
@@ -1196,7 +1186,7 @@ dateChooser.updateCallback = time => {
 };
 
 
-setupEventHandlers(state, loadAndPlot, redraw);
+setupEventHandlers(state);
 
 
 document.querySelector("button#refreshEarthquakes").addEventListener("click", () => {
