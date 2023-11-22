@@ -19,12 +19,39 @@ const locCodeList = ['00', '01'];
 const orientList = ['Z', 'N/1', 'E/2'];
 const bandInstCodeList = ['HN', 'HH', 'LH'];
 
+interface FilterConfig {
+	type: string,
+	lowCut: string,
+	highCut: string
+}
+
+interface Config {
+	netCodeList: string[],
+	stationList: string[],
+	bandCodeList: string[],
+	instCodeList: string[],
+	orientationCodeList: string[],
+	netCode: string,
+	station: string,
+	locCode: string,
+	bandCode: string,
+	instCode: string,
+	orientationCode: string,
+	altOrientationCode: string,
+	endTime: string,
+	duration: string,
+	doMinMax: boolean,
+	amp: string,
+	rmean: boolean,
+	filter: FilterConfig
+}
+
 // Update the HTML date chooser object with the given time and duration (luxon Duration)
 //   If either parameter is missing, use the previous value for the parameter, if it exists
 // @param time: ISO-formatted luxon time for the date value of the date chooser
 // @param duration: luxon Duration for the time value of the date chooser
 // TODO: duration is actually not a Duration here, it's a string that gets converted into a duration. Fix!
-function updateDateChooser(time: string = state.endTime, duration: string = state.duration) {
+function updateDateChooser(time: string = state.endTime, duration: string = state.duration) : void {
 	const DateTimeChooser = sp.datechooser["DateTimeChooser"];
 	// For some reason, the DateTimerChooser variable in sp doesn't register as a class
 	let dateChooser : typeof DateTimeChooser = document.querySelector("sp-datetime");
@@ -39,10 +66,10 @@ function updateDateChooser(time: string = state.endTime, duration: string = stat
 	throw new Error(`[ERROR] updateDateChooser: missing time/duration: ${time}, ${duration}`);
 }
 
-function handleFilteringChange(config, type, lowcut, highcut, redrawFun) {
+function handleFilteringChange(config : Config, type : string, lowCut : string, highCut : string, redrawFun) : void {
 	config.filter.type = type;
-	config.filter.lowcut = lowcut;
-	config.filter.highcut = highcut;
+	config.filter.lowCut = lowCut;
+	config.filter.highCut = highCut;
 
 	redrawFun(config);
 }
@@ -1065,7 +1092,7 @@ const DEFAULT_FIXED_AMP = 10000;
 
 // state preserved for browser history
 // also see near bottom where we check if page history has state obj and use that
-let state = {
+let state : Config = {
 	netCodeList: ['CO', 'N4'],
 	stationList: staList,
 	bandCodeList: ['H', 'L'],
@@ -1080,20 +1107,19 @@ let state = {
 	altOrientationCode: "",
 	endTime: "now",
 	duration: 'P1D',
-	dominmax: true,
+	doMinMax: true,
 	amp: "max",
 	rmean: false,
 	filter: {
 		type: "allpass",
-		lowcut: '1.0',
-		highcut: '10.0',
+		lowCut: '1.0',
+		highCut: '10.0',
 	},
 };
 state.station = 'BIRD';
 
 let savedData = {
-	config: state,
-
+	config: state
 };
 
 function loadAndPlot(config) {
