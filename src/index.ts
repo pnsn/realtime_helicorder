@@ -14,10 +14,22 @@ const MSEED_URL = "https://eeyore.seis.sc.edu/mseed";
 const QUAKE_START_OFFSET = luxon.Duration.fromObject({ hours: 1 });
 
 const HOURS_PER_LINE = 2;
+const RETURN_KEYCODE = 13;
 
 const locCodeList = ['00', '01'];
 const orientList = ['Z', 'N/1', 'E/2'];
 const bandInstCodeList = ['HN', 'HH', 'LH'];
+
+enum AmpType {
+	MAX,
+	FIXED,
+	PERCENT
+}
+
+interface Amplitude {
+	type: AmpType,
+	value: number
+}
 
 interface FilterConfig {
 	type: string,
@@ -41,7 +53,7 @@ interface Config {
 	endTime: string,
 	duration: string,
 	doMinMax: boolean,
-	amp: string,
+	amp: Amplitude,
 	rmean: boolean,
 	filter: FilterConfig
 }
@@ -50,10 +62,9 @@ interface Config {
 //   If either parameter is missing, use the previous value for the parameter, if it exists
 // @param time: ISO-formatted luxon time for the date value of the date chooser
 // @param duration: luxon Duration for the time value of the date chooser
-// TODO: duration is actually not a Duration here, it's a string that gets converted into a duration. Fix!
 function updateDateChooser(time: string = state.endTime, duration: string = state.duration) : void {
 	const DateTimeChooser = sp.datechooser["DateTimeChooser"];
-	// For some reason, the DateTimerChooser variable in sp doesn't register as a class
+	// For some reason, the DateTimerChooser variable in sp doesn't register as a class, so we use typeof
 	let dateChooser : typeof DateTimeChooser = document.querySelector("sp-datetime");
 	if (time && duration) {
 		let luxonDateTime : DateTime = sp.util.isoToDateTime(time);
@@ -66,30 +77,21 @@ function updateDateChooser(time: string = state.endTime, duration: string = stat
 	throw new Error(`[ERROR] updateDateChooser: missing time/duration: ${time}, ${duration}`);
 }
 
-function handleFilteringChange(config : Config, type : string, lowCut : string, highCut : string, redrawFun) : void {
+function handleFilteringChange(config : Config, type : string, lowCut : string, highCut : string) : void {
 	config.filter.type = type;
 	config.filter.lowCut = lowCut;
 	config.filter.highCut = highCut;
 
-	redrawFun(config);
+	redraw();
 }
 
-function handleAmpChange(config, value, redrawFun) {
-	if (value === "max") {
-		config.amp = value;
-	} else if (typeof value === 'string' && value.endsWith('%')) {
-		config.amp = value;
-	} else if (Number.isFinite(value)) {
-		config.amp = value;
-	} else {
-		// assume empty/bad value in text box
-		console.log(`bad value in amp: ${value}`);
-		config.amp = 10000;
-		document.querySelector("#amp")
-			.querySelector("input#fixedAmpText").value = config.amp;
-	}
+function handleAmpChange(config : Config, amplitudeType : AmpType, value : number) : void {
+	config.amp = {
+		type: amplitudeType,
+		value: value
+	};
 	updatePageForConfig(config);
-	redrawFun(config);
+	redraw();
 }
 
 function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
@@ -266,31 +268,31 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 	});
 
 	document.querySelector("input#maxAmp").addEventListener("click", function (d) {
-		handleAmpChange(config, "max", redrawFun);
+		// Value doesn't matter for max type, so just pass zero
+		handleAmpChange(config, AmpType.MAX, 0);
 	});
 
 	document.querySelector("input#fixedAmp").addEventListener("click", function (d) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value, redrawFun);
+		handleAmpChange(config, AmpType.FIXED, value);
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("keypress", function (e) {
-		if (e.keyCode === 13) {
-			// return  is 13
+		if (e.keyCode === RETURN_KEYCODE) {
 			let value = Number(document.querySelector("input#fixedAmpText").value);
-			handleAmpChange(config, value, redrawFun);
+			handleAmpChange(config, AmpType.FIXED, value);
 		}
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("change", function (e) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value, redrawFun);
+		handleAmpChange(config, AmpType.FIXED, value);
 	});
 
 	document.querySelector("input#percentAmp").addEventListener("click", updateAmpPercent);
 	document.querySelector("#percentAmpSlider").addEventListener("input", updateAmpPercent);
 	function updateAmpPercent() {
-		let percStr = `${document.querySelector("input#percentAmpSlider").value}%`;
-		document.querySelector("#percentValue").textContent = percStr;
-		handleAmpChange(config, percStr, redrawFun);
+		let percValue : number = Number(document.querySelector("input#percentAmpSlider").value);
+		document.querySelector("#percentValue").textContent = percValue + "%";
+		handleAmpChange(config, AmpType.PERCENT, percValue);
 	}
 
 	document.querySelector("input#minmax").addEventListener("change", () => {
@@ -305,32 +307,28 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 	document.querySelector("input#allpass").addEventListener("change", () => {
 		handleFilteringChange(config, "allpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#lowpass").addEventListener("change", () => {
 		handleFilteringChange(config, "lowpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#bandpass").addEventListener("change", () => {
 		handleFilteringChange(config, "bandpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#highpass").addEventListener("change", () => {
 		handleFilteringChange(config, "highpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
