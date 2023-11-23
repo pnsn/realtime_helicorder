@@ -36,10 +36,6 @@ interface FilterConfig {
 }
 
 interface Config {
-	netCodeList: string[],
-	stationList: string[],
-	bandCodeList: string[],
-	instCodeList: string[],
 	orientationCodeList: string[],
 	netCode: string,
 	station: string,
@@ -1069,7 +1065,7 @@ function drawSeismograph(hash) {
 
 function showError(msg) {
 	showMessage(msg);
-	document.querySelector("#messagesParent").setAttribute("open", true);
+	document.querySelector("#messagesParent").setAttribute("open", "true");
 }
 function showMessage(msg) {
 	let msgText = document.querySelector("#messages").appendChild(document.createElement("h3"));
@@ -1078,7 +1074,7 @@ function showMessage(msg) {
 }
 function clearMessages() {
 	document.querySelector("#messages").innerHTML = "";
-	document.querySelector("#messagesParent").setAttribute("open", false);
+	document.querySelector("#messagesParent").setAttribute("open", "false");
 }
 
 // state preserved for browser history
@@ -1185,7 +1181,7 @@ dateChooser.updateCallback = time => {
 };
 
 
-setupEventHandlers(state, loadAndPlot, redraw);
+setupEventHandlers(state);
 
 
 document.querySelector("button#refreshEarthquakes").addEventListener("click", () => {
