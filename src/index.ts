@@ -287,9 +287,10 @@ function setupEventHandlers(config) {
 		handleAmpChange(config, percStr);
 	}
 
-	document.querySelector("input#minmax").addEventListener("change", () => {
+	document.querySelector("input#minmax").addEventListener("change", async () => {
 		config.dominmax = document.querySelector("input#minmax").checked;
-		loadAndPlot(config).then(() => { enableFiltering(config.heliDataIsMinMax) });
+		await loadAndPlot(config);
+		enableFiltering(config.heliDataIsMinMax);
 	});
 	document.querySelector("input#rmean").addEventListener("change", () => {
 		config.rmean = document.querySelector("input#rmean").checked;
@@ -1105,13 +1106,12 @@ let savedData = {
 	config: state
 };
 
-function loadAndPlot(config) {
+async function loadAndPlot(config) {
 	updatePageForConfig(config);
-	doPlot(config).then(hash => {
-		if (hash) {
-			savedData = hash;
-		}
-	});
+	let hash = await doPlot(config);
+	if (hash) {
+		savedData = hash;
+	}
 };
 
 function redraw() {
