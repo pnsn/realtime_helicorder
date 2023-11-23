@@ -340,14 +340,14 @@ function updatePageForConfig(currentConfig) {
 	let doHighPass = false;
 	if (currentConfig && currentConfig.filter) {
 		if (currentConfig.filter.type === "lowpass") {
-			doLowPass = "true";
+			doLowPass = true;
 		} else if (currentConfig.filter.type === "bandpass") {
-			doBandPass = "true";
+			doBandPass = true;
 		} else if (currentConfig.filter.type === "highpass") {
-			doHighPass = "true";
+			doHighPass = true;
 		} else {
 			// all pass
-			doAllPass = "true";
+			doAllPass = true;
 		}
 		document.querySelector("input#allpass").checked = doAllPass;
 		document.querySelector("input#lowpass").checked = doLowPass;
