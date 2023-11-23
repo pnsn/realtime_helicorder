@@ -101,14 +101,7 @@ function handleAmpChange(config, value) {
 	redraw();
 }
 
-function setupEventHandlers(config, loadAndPlotFun) {
-	console.log("-------------------- Looking at DateChooser! --------------------------");
-	console.log(Object.keys(sp.datechooser));
-	console.log(sp.datechooser["DateTimeChooser"]);
-
-	if (!loadAndPlotFun) {
-		throw new Error("loadandPlotFun must be defined");
-	}
+function setupEventHandlers(config) {
 	document.querySelector("button#goheli").addEventListener("click", () => {
 		document.querySelector("#heli").setAttribute("style", "display: block;");
 		document.querySelector("#seismograph").setAttribute("style", "display: none;");
@@ -137,7 +130,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		});
 	});
 	const staDiv = document.querySelector("#scsnStations");
-	config.stationList.forEach(sta => {
+	stationList.forEach(sta => {
 		const span = staDiv.appendChild(document.createElement("span"));
 		const button = span.appendChild(document.createElement("input"));
 		const label = span.appendChild(document.createElement("label"));
@@ -150,7 +143,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		button.checked = sta === config.station;
 		button.addEventListener('click', event => {
 			config.station = sta;
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -177,7 +170,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 				config.altOrientationCode = "";
 			}
 			console.log(`click ${config.orientationCode} ${config.altOrientationCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -208,7 +201,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 			config.bandCode = bandinst.charAt(0);
 			config.instCode = bandinst.charAt(1);
 			console.log(`click ${config.bandCode}${config.instCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -227,7 +220,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		button.addEventListener('click', event => {
 			config.locCode = locCode;
 			console.log(`click ${config.locCode} ${config.bandCode}${config.instCode}`);
-			loadAndPlotFun(config);
+			loadAndPlot(config);
 		});
 	});
 
@@ -235,14 +228,14 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		config.endTime = getNowTime().toISO();
 		console.log(`now ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadToday").addEventListener("click", function (d) {
 		config.endTime = luxon.DateTime.utc().endOf('day').plus({ millisecond: 1 }).toISO();
 		console.log(`today ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadPrev").addEventListener("click", function (d) {
@@ -255,7 +248,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		config.endTime = e.minus({ days: 1 }).toISO();
 		console.log(`prev ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("button#loadNext").addEventListener("click", function (d) {
@@ -268,7 +261,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 		config.endTime = e.plus({ day: 1 }).toISO();
 		console.log(`next ${config.endTime}`);
 		updateDateChooser(config);
-		loadAndPlotFun(config);
+		loadAndPlot(config);
 	});
 
 	document.querySelector("input#maxAmp").addEventListener("click", function (d) {
@@ -300,7 +293,7 @@ function setupEventHandlers(config, loadAndPlotFun) {
 
 	document.querySelector("input#minmax").addEventListener("change", () => {
 		config.dominmax = document.querySelector("input#minmax").checked;
-		loadAndPlotFun(config).then(() => { enableFiltering(config.heliDataIsMinMax) });
+		loadAndPlot(config).then(() => { enableFiltering(config.heliDataIsMinMax) });
 	});
 	document.querySelector("input#rmean").addEventListener("change", () => {
 		config.rmean = document.querySelector("input#rmean").checked;
