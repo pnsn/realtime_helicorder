@@ -15,6 +15,11 @@ const QUAKE_START_OFFSET = luxon.Duration.fromObject({ hours: 1 });
 
 const HOURS_PER_LINE = 2;
 const RETURN_KEYCODE = 13;
+const DEFAULT_FIXED_AMP = 10000;
+
+enum LocCode {
+	DOUBLE_0
+}
 
 const locCodeList = ['00', '01'];
 const orientList = ['Z', 'N/1', 'E/2'];
@@ -1082,8 +1087,6 @@ function clearMessages() {
 	document.querySelector("#messages").innerHTML = "";
 	document.querySelector("#messagesParent").setAttribute("open", false);
 }
-
-const DEFAULT_FIXED_AMP = 10000;
 
 // state preserved for browser history
 // also see near bottom where we check if page history has state obj and use that
