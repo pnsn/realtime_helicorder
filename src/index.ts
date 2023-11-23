@@ -14,10 +14,15 @@ const MSEED_URL = "https://eeyore.seis.sc.edu/mseed";
 const QUAKE_START_OFFSET = luxon.Duration.fromObject({ hours: 1 });
 
 const HOURS_PER_LINE = 2;
+const RETURN_KEYCODE = 13;
 
 const locCodeList = ['00', '01'];
 const orientList = ['Z', 'N/1', 'E/2'];
 const bandInstCodeList = ['HN', 'HH', 'LH'];
+const netCodeList = ['CO', 'N4'];
+const bandCodeList = ['H', 'L'];
+const instCodeList = ['H', 'N'];
+const stationList = ['BARN', 'BIRD', 'C1SC', 'CASEE', 'CSB', 'HAW', 'HODGE', 'JKYD', 'JSC', 'PAULI', 'SUMMV', 'TEEBA'];
 
 interface FilterConfig {
 	type: string,
@@ -50,10 +55,9 @@ interface Config {
 //   If either parameter is missing, use the previous value for the parameter, if it exists
 // @param time: ISO-formatted luxon time for the date value of the date chooser
 // @param duration: luxon Duration for the time value of the date chooser
-// TODO: duration is actually not a Duration here, it's a string that gets converted into a duration. Fix!
 function updateDateChooser(time: string = state.endTime, duration: string = state.duration) : void {
 	const DateTimeChooser = sp.datechooser["DateTimeChooser"];
-	// For some reason, the DateTimerChooser variable in sp doesn't register as a class
+	// For some reason, the DateTimerChooser variable in sp doesn't register as a class, so we use typeof
 	let dateChooser : typeof DateTimeChooser = document.querySelector("sp-datetime");
 	if (time && duration) {
 		let luxonDateTime : DateTime = sp.util.isoToDateTime(time);
@@ -66,15 +70,15 @@ function updateDateChooser(time: string = state.endTime, duration: string = stat
 	throw new Error(`[ERROR] updateDateChooser: missing time/duration: ${time}, ${duration}`);
 }
 
-function handleFilteringChange(config : Config, type : string, lowCut : string, highCut : string, redrawFun) : void {
+function handleFilteringChange(config : Config, type : string, lowCut : string, highCut : string) : void {
 	config.filter.type = type;
 	config.filter.lowCut = lowCut;
 	config.filter.highCut = highCut;
 
-	redrawFun(config);
+	redraw();
 }
 
-function handleAmpChange(config, value, redrawFun) {
+function handleAmpChange(config, value) {
 	if (value === "max") {
 		config.amp = value;
 	} else if (typeof value === 'string' && value.endsWith('%')) {
@@ -89,19 +93,16 @@ function handleAmpChange(config, value, redrawFun) {
 			.querySelector("input#fixedAmpText").value = config.amp;
 	}
 	updatePageForConfig(config);
-	redrawFun(config);
+	redraw();
 }
 
-function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
+function setupEventHandlers(config, loadAndPlotFun) {
 	console.log("-------------------- Looking at DateChooser! --------------------------");
 	console.log(Object.keys(sp.datechooser));
 	console.log(sp.datechooser["DateTimeChooser"]);
 
 	if (!loadAndPlotFun) {
 		throw new Error("loadandPlotFun must be defined");
-	}
-	if (!redrawFun) {
-		throw new Error("redrawFun must be defined");
 	}
 	document.querySelector("button#goheli").addEventListener("click", () => {
 		document.querySelector("#heli").setAttribute("style", "display: block;");
@@ -266,23 +267,22 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 	});
 
 	document.querySelector("input#maxAmp").addEventListener("click", function (d) {
-		handleAmpChange(config, "max", redrawFun);
+		handleAmpChange(config, "max");
 	});
 
 	document.querySelector("input#fixedAmp").addEventListener("click", function (d) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value, redrawFun);
+		handleAmpChange(config, value);
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("keypress", function (e) {
-		if (e.keyCode === 13) {
-			// return  is 13
+		if (e.keyCode === RETURN_KEYCODE) {
 			let value = Number(document.querySelector("input#fixedAmpText").value);
-			handleAmpChange(config, value, redrawFun);
+			handleAmpChange(config, value);
 		}
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("change", function (e) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value, redrawFun);
+		handleAmpChange(config, value);
 	});
 
 	document.querySelector("input#percentAmp").addEventListener("click", updateAmpPercent);
@@ -290,7 +290,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 	function updateAmpPercent() {
 		let percStr = `${document.querySelector("input#percentAmpSlider").value}%`;
 		document.querySelector("#percentValue").textContent = percStr;
-		handleAmpChange(config, percStr, redrawFun);
+		handleAmpChange(config, percStr);
 	}
 
 	document.querySelector("input#minmax").addEventListener("change", () => {
@@ -299,38 +299,34 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 	});
 	document.querySelector("input#rmean").addEventListener("change", () => {
 		config.rmean = document.querySelector("input#rmean").checked;
-		redrawFun(config);
+		redraw();
 	});
 
 	document.querySelector("input#allpass").addEventListener("change", () => {
 		handleFilteringChange(config, "allpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#lowpass").addEventListener("change", () => {
 		handleFilteringChange(config, "lowpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#bandpass").addEventListener("change", () => {
 		handleFilteringChange(config, "bandpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
 	document.querySelector("input#highpass").addEventListener("change", () => {
 		handleFilteringChange(config, "highpass",
 			document.querySelector("input#lowcut").value,
-			document.querySelector("input#highcut").value,
-			redrawFun,
+			document.querySelector("input#highcut").value
 		);
 	});
 
@@ -558,12 +554,12 @@ function doPlotHeli(config) {
 	clearMessages();
 	showMessage(`...loading ${config.netCode}.${config.station}.`);
 
-	let netCodeQuery = config.netCodeList.join();
-	let staCodeQuery = config.stationList.join();
+	let netCodeQuery = netCodeList.join();
+	let staCodeQuery = stationList.join();
 	let locCodeQuery = config.locCode;
 	let chanCodeQuery = [];
-	config.bandCodeList.forEach(bc => {
-		config.instCodeList.forEach(ic => chanCodeQuery.push(`${bc}${ic}?`));
+	bandCodeList.forEach(bc => {
+		instCodeList.forEach(ic => chanCodeQuery.push(`${bc}${ic}?`));
 	});
 	chanCodeQuery = chanCodeQuery.join();
 	document.querySelector("span.textNetCode").textContent = "";
@@ -1087,16 +1083,11 @@ function clearMessages() {
 	document.querySelector("#messagesParent").setAttribute("open", false);
 }
 
-const staList = ['BARN', 'BIRD', 'C1SC', 'CASEE', 'CSB', 'HAW', 'HODGE', 'JKYD', 'JSC', 'PAULI', 'SUMMV', 'TEEBA'];
 const DEFAULT_FIXED_AMP = 10000;
 
 // state preserved for browser history
 // also see near bottom where we check if page history has state obj and use that
 let state : Config = {
-	netCodeList: ['CO', 'N4'],
-	stationList: staList,
-	bandCodeList: ['H', 'L'],
-	instCodeList: ['H', 'N'],
 	orientationCodeList: ['Z', 'N', 'E', '1', '2'],
 	netCode: 'CO',
 	station: null,
