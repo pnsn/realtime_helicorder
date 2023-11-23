@@ -29,6 +29,17 @@ const bandCodeList = ['H', 'L'];
 const instCodeList = ['H', 'N'];
 const stationList = ['BARN', 'BIRD', 'C1SC', 'CASEE', 'CSB', 'HAW', 'HODGE', 'JKYD', 'JSC', 'PAULI', 'SUMMV', 'TEEBA'];
 
+enum AmpType {
+	MAX,
+	FIXED,
+	PERCENT
+}
+
+interface Amplitude {
+	type: AmpType,
+	value: number
+}
+
 interface FilterConfig {
 	type: string,
 	lowCut: string,
