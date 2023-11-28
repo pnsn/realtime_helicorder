@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8" />
+   <link rel="stylesheet" href="style.css">
+   <title>SCSN Helicorder</title>
+   <link rel="icon" type="image/png" href="../../flavicon.png" />
+</head>
+<body>
+  <h5><a href="../../index.html" class="">Seisplotjs</a> - <a href="../index.html" class="">Examples</a> - Helicorder</h5>
+
+<h3>Helicorder Plots for South Carolina Seismic Network Stations:</h3>
+<div id="scsnStations">
+  <label class="sectionlabel" title="Stations within the South Carolina Seismic Network">Stations:</label>
+</div>
+<div>
+  <span id="loccode"><label class="sectionlabel">Loc Code: </label></span>
+  <span id="instruments"><label class="sectionlabel">Instrument: </label></span>
+  <span id="orientations"><label class="sectionlabel">Orientation: </label></span>
+</div>
+<div id="minmax">
+  <label class="sectionlabel" title="Load MinMax">Load: </label>
+  <span>
+    <input type="checkbox" id="minmax" class="shape" name="ampMode" value="0" checked="true"/>
+    <label for="minmax">Load Min Max Only </label>
+  </span>
+</div>
+<div id="amp">
+  <label class="sectionlabel" title="Amplitude Range">Amp Range: </label>
+  <span>
+    <input type="radio" id="maxAmp" class="shape" name="ampMode" value="0" checked="true"/>
+    <label for="fixedAmpText">Max Value </label>
+  </span>
+  <span>
+    <input type="radio" id="fixedAmp" class="shape" name="ampMode" value="1"/>
+    <label for="fixedAmpText">Fixed: </label>
+    <input class="smallnum" type="text" id="fixedAmpText" name="fixedAmp" pattern="[1-9][0-9]*" value="10000"/>
+  </span>
+  <span>
+    <input type="radio" id="percentAmp" class="shape" name="ampMode" value="2">
+    <label for="percentAmpSlider">Percent: </label>
+    <input class="smallnum" type="range" min="1" max="100" id="percentAmpSlider" value="100"><span id="percentValue">100%</span>
+  </span>
+  <span>
+    <input type="checkbox" id="rmean" class="shape" name="rmean" value="0" checked="true"/>
+    <label for="rmean">Remove Mean </label>
+  </span>
+</div>
+<div id="filtering">
+  <label class="sectionlabel" title="Filtering">Filtering: </label>
+  <span>
+    <input type="radio" id="allpass" name="filter" value="allpass" checked="true"></input>
+    <label for="allpass">None</label>
+  </span>
+  <span>
+    <input type="radio" id="lowpass" name="filter" value="lowpass" ></input>
+    <label for="lowpass">Lowpass</label>
+  </span>
+  <span>
+    <input type="radio" id="bandpass" name="filter" value="bandpass" ></input>
+    <label for="bandpass">Bandpass</label>
+  </span>
+  <span>
+    <input type="radio" id="highpass" name="filter" value="highpass" ></input>
+    <label for="highpass">Highpass</label>
+  </span>
+  <label for="lowcut">Low Cut: </label>
+  <input class="smallnum" type="text" id="lowcut" name="lowcut" value="1.0"></input>
+  <label for="highcut">High Cut: </label>
+  <input class="smallnum" type="text" id="highcut" name="highcut" value=10.0></input>
+</div>
+<div id="times">
+  <label class="sectionlabel">Time Range: </label>
+  <button id="loadToday">Today</button>
+  <button id="loadNow">Now</button>
+  <button id="loadPrev">Previous</button>
+  <button id="loadNext">Next</button>
+  <sp-datetime></sp-datetime>
+  <label class="sectionlabel">Click Interval: </label>
+  <input id="clickinterval" class="smallnum" type="text" value="PT5M"></input>
+  <label class="sectionlabel">Mouse: </label><span id="mousetime"></span>
+</div>
+<details>
+  <summary class="sectionlabel">Query Earthquakes</summary>
+  <div id="eqquery">
+    <div>
+      <button id="refreshEarthquakes">Refresh Earthquakes</button>
+    </div>
+    <div id="local">
+      <h5>Local Earthquakes:</h5>
+      <label>Min Lat: </label><input type="text" id="localMinLat" name="localMinLat" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="31.75"/>
+      <label>Max Lat: </label><input type="text" id="localMaxLat" name="localMaxLat" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="35.5"/>
+      <label>Min Lon: </label><input type="text" id="localMinLon" name="localMinLon" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="-84"/>
+      <label>Max Lon: </label><input type="text" id="localMaxLon" name="localMaxLon" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="-78"/>
+    </div>
+    <div id="regional">
+      <h5>Regional Earthquakes:</h5>
+      <label>Max Radius: </label><input type="text" id="regionalMaxRadius" name="regionalMaxRadius" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="10"/>
+      <label>Min Mag: </label><input type="text" id="regionalMinMag" name="regionalMinMag" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="4.5"/>
+    </div>
+    <div id="global">
+      <h5>Global Earthquakes:</h5>
+      <label>Min Mag: </label><input type="text" id="globalMinMag" name="globalMinMag" pattern="-?[1-9][0-9]*(\.[0-9]*)?" value="6"/>
+    </div>
+  </div>
+</details>
+
+<h3><span class="textNetCode"></span>.<span class="textStaCode"></span>.<span class="textLocCode">00</span>.<span class="textChanCode">H??</span> from <span class="startTime"></span> to <span class="endTime"></span>.</h3>
+<details id="messagesParent">
+  <summary class="sectionlabel">Messages:</summary>
+  <div id="messages">
+  </div>
+</details>
+
+<div id='heli'>
+  <h5>Heli Div</h5>
+  <sp-helicorder></sp-helicorder>
+</div>
+<div id='seismograph' style="display: none;">
+  <div>
+    <button id="goheli">Helicorder</button>
+    <button id="reload">Load More</button>
+  </div>
+  <sp-organized-display info="false" map="false"></sp-organized-display>
+</div>
+
+<p>Note that data may be delayed up to 15 minutes due to buffering.</p>
+
+
+
+<h5>Generated with <a href="https://github.com/crotwell/seisplotjs">Seisplotjs version <span id="version">3</span></a>.</h5>
+
+
+<script type="module" src="built/src/index.js"></script>  
+<script type="module">
+  import * as sp from './seisplotjs/seisplotjs_3.1.1_standalone.mjs';
+  document.querySelector("#version").textContent = sp.version;
+</script>
+</body>
+</html>
