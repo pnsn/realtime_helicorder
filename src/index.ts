@@ -68,9 +68,9 @@ interface Config {
 // @param time: ISO-formatted luxon time for the date value of the date chooser
 // @param duration: luxon Duration for the time value of the date chooser
 function updateDateChooser(time: string = state.endTime, duration: string = state.duration) : void {
-	const DateTimeChooser = sp.datechooser["DateTimeChooser"];
+	const DateTimeChooser = sp.datechooser.DateTimeChooser();
 	// For some reason, the DateTimerChooser variable in sp doesn't register as a class, so we use typeof
-	let dateChooser : typeof DateTimeChooser = document.querySelector("sp-datetime");
+	let dateChooser : DateTimeChooser = document.querySelector("sp-datetime");
 	if (time && duration) {
 		let luxonDateTime : DateTime = sp.util.isoToDateTime(time);
 		let luxonDuration : Duration = luxon.Duration.fromISO(duration);
