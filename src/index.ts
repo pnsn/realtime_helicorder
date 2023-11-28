@@ -1,4 +1,4 @@
-import * as sp from '../built/seisplotjs/seisplotjs_3.1.1_standalone.mjs';
+import * as sp from '../seisplotjs/seisplotjs_3.1.1_standalone.mjs';
 
 const d3 = sp.d3;
 const luxon = sp.luxon;
@@ -233,9 +233,6 @@ function doPlotHeli(config) {
   clearMessages();
   showMessage(`...loading ${config.netCode}.${config.station}.`);
 
-  if (!config.netCodeList) {
-	console.log(config);
-  }
   let netCodeQuery = config.netCodeList.join();
   let staCodeQuery = config.stationList.join();
   let locCodeQuery = config.locCode;
