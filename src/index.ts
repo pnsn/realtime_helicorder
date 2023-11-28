@@ -58,7 +58,7 @@ interface Config {
 	endTime: string,
 	duration: string,
 	doMinMax: boolean,
-	amp: string,
+	amp: Amplitude,
 	rmean: boolean,
 	filter: FilterConfig
 }
@@ -90,20 +90,11 @@ function handleFilteringChange(config : Config, type : string, lowCut : string, 
 	redraw();
 }
 
-function handleAmpChange(config, value) {
-	if (value === "max") {
-		config.amp = value;
-	} else if (typeof value === 'string' && value.endsWith('%')) {
-		config.amp = value;
-	} else if (Number.isFinite(value)) {
-		config.amp = value;
-	} else {
-		// assume empty/bad value in text box
-		console.log(`bad value in amp: ${value}`);
-		config.amp = 10000;
-		document.querySelector("#amp")
-			.querySelector("input#fixedAmpText").value = config.amp;
-	}
+function handleAmpChange(config : Config, amplitudeType : AmpType, value : number) : void {
+	config.amp = {
+		type: amplitudeType,
+		value: value
+	};
 	updatePageForConfig(config);
 	redraw();
 }
@@ -272,30 +263,31 @@ function setupEventHandlers(config) {
 	});
 
 	document.querySelector("input#maxAmp").addEventListener("click", function (d) {
-		handleAmpChange(config, "max");
+		// Value doesn't matter for max type, so just pass zero
+		handleAmpChange(config, AmpType.MAX, 0);
 	});
 
 	document.querySelector("input#fixedAmp").addEventListener("click", function (d) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value);
+		handleAmpChange(config, AmpType.FIXED, value);
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("keypress", function (e) {
 		if (e.keyCode === RETURN_KEYCODE) {
 			let value = Number(document.querySelector("input#fixedAmpText").value);
-			handleAmpChange(config, value);
+			handleAmpChange(config, AmpType.FIXED, value);
 		}
 	});
 	document.querySelector("input#fixedAmpText").addEventListener("change", function (e) {
 		let value = Number(document.querySelector("input#fixedAmpText").value);
-		handleAmpChange(config, value);
+		handleAmpChange(config, AmpType.FIXED, value);
 	});
 
 	document.querySelector("input#percentAmp").addEventListener("click", updateAmpPercent);
 	document.querySelector("#percentAmpSlider").addEventListener("input", updateAmpPercent);
 	function updateAmpPercent() {
-		let percStr = `${document.querySelector("input#percentAmpSlider").value}%`;
-		document.querySelector("#percentValue").textContent = percStr;
-		handleAmpChange(config, percStr);
+		let percValue : number = Number(document.querySelector("input#percentAmpSlider").value);
+		document.querySelector("#percentValue").textContent = percValue + "%";
+		handleAmpChange(config, AmpType.PERCENT, percValue);
 	}
 
 	document.querySelector("input#minmax").addEventListener("change", async () => {
@@ -338,7 +330,7 @@ function setupEventHandlers(config) {
 
 }
 
-function updatePageForConfig(currentConfig) {
+function updatePageForConfig(currentConfig : Config) {
 	// minmax
 	document.querySelector("input#minmax").checked = currentConfig.dominmax;
 
@@ -366,10 +358,10 @@ function updatePageForConfig(currentConfig) {
 		document.querySelector("input#bandpass").checked = doBandPass;
 		document.querySelector("input#highpass").checked = doHighPass;
 
-		document.querySelector("input#lowcut").value = currentConfig.filter.lowcut;
-		document.querySelector("input#lowcut").textContent = currentConfig.filter.lowcut;
-		document.querySelector("input#highcut").value = currentConfig.filter.highcut;
-		document.querySelector("input#highcut").textContent = currentConfig.filter.highcut;
+		document.querySelector("input#lowcut").value = currentConfig.filter.lowCut;
+		document.querySelector("input#lowcut").textContent = currentConfig.filter.lowCut;
+		document.querySelector("input#highcut").value = currentConfig.filter.highCut;
+		document.querySelector("input#highcut").textContent = currentConfig.filter.highCut;
 	}
 
 	// amp
@@ -377,27 +369,24 @@ function updatePageForConfig(currentConfig) {
 	document.querySelector("#maxAmp").checked = false;
 	document.querySelector("#fixedAmp").checked = false;
 	if (currentConfig) {
-		if (typeof currentConfig.amp === 'string' && currentConfig.amp.endsWith('%')) {
-			let percent = Number(currentConfig.amp.substring(0, currentConfig.amp.length - 1));
-			document.querySelector("input#percentAmpSlider").value = percent;
-			document.querySelector("#percentAmp").checked = true;
-		} else if (currentConfig.amp === "max") {
-			document.querySelector("#maxAmp").checked = true;
-			currentConfig.amp = "max";
-		} else if (Number.isFinite(Number(currentConfig.amp))) {
-			document.querySelector("#fixedAmp").checked = true;
-			document.querySelector("input#fixedAmpText").value = currentConfig.amp;
-			document.querySelector("input#fixedAmpText").textContent = currentConfig.amp;
-		} else {
-			// default to max?
-			document.querySelector("#maxAmp").checked = true;
-			currentConfig.amp = "max";
+		switch(currentConfig.amp.type) {
+			case AmpType.PERCENT:
+				let percent = currentConfig.amp.value;
+				document.querySelector("input#percentAmpSlider").value = percent;
+				document.querySelector("#percentAmp").checked = true;
+				break;
+			case AmpType.MAX:
+				document.querySelector("#maxAmp").checked = true;
+				break;
+			case AmpType.FIXED:
+				document.querySelector("#fixedAmp").checked = true;
+				document.querySelector("input#fixedAmpText").value = currentConfig.amp.value;
+				document.querySelector("input#fixedAmpText").textContent = `${currentConfig.amp.value}`;
+				break;
 		}
-
 	} else {
 		// default to max?
 		document.querySelector("#maxAmp").checked = true;
-		currentConfig.amp = "max";
 	}
 
 	// earthquake query params
@@ -507,7 +496,7 @@ function createEmptySavedData(config) {
 		bandCode: config.bandCode,
 		instCode: config.instCode,
 		minMaxInstCode: config.instCode === 'H' ? 'X' : 'Y',
-		amp: config.amp ? config.amp : "max",
+		amp: config.amp ? config.amp : { type: AmpType.MAX, value: 0 },
 		netArray: [],
 		chanTR: [],
 		origData: null,
@@ -996,16 +985,16 @@ function redrawHeli(hash) {
 }
 
 function updateHeliAmpConfig(hash, heliConfig) {
-	if (hash.config.amp === 'max') {
+	if (hash.config.amp.type === AmpType.MAX) {
 		heliConfig.fixedAmplitudeScale = [0, 0];
 		heliConfig.maxVariation = 0;
-	} else if (typeof hash.config.amp === 'string' && hash.config.amp.endsWith('%')) {
+	} else if (hash.config.amp.type === AmpType.PERCENT) {
 		heliConfig.fixedAmplitudeScale = [0, 0];
-		const percent = Number(hash.config.amp.substring(0, hash.config.amp.length - 1)) / 100;
+		const percent = hash.config.amp.value;
 		heliConfig.maxVariation = percent * (hash.seisData.max - hash.seisData.mean);
-	} else if (Number.isFinite(hash.config.amp)) {
+	} else if (hash.config.amp.type === AmpType.FIXED) {
 		heliConfig.fixedAmplitudeScale = [0, 0];
-		heliConfig.maxVariation = hash.config.amp;
+		heliConfig.maxVariation = hash.config.amp.value;
 	} else {
 		heliConfig.fixedAmplitudeScale = [0, 0];
 		heliConfig.maxVariation = 0;
@@ -1103,7 +1092,10 @@ let state : Config = {
 	endTime: "now",
 	duration: 'P1D',
 	doMinMax: true,
-	amp: "max",
+	amp: {
+		type: AmpType.MAX,
+		value: 0
+	},
 	rmean: false,
 	filter: {
 		type: "allpass",
