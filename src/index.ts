@@ -16,7 +16,7 @@ const MSEED_URL = "https://eeyore.seis.sc.edu/mseed";
 
 const QUAKE_START_OFFSET = luxon.Duration.fromObject({hours: 1});
 
-const HOURS_PER_LINE = 2;
+const HOURS_PER_LINE = 1;
 
 const locCodeList = ['00', '01'];
 const orientList = ['Z', 'N/1', 'E/2'];
@@ -252,6 +252,7 @@ function doPlotHeli(config) {
   let channelPromise;
   if (true) {
     // default load from fdsnws
+    // TODO: IMPORTANT
     let channelQuery = new sp.fdsnstation.StationQuery()
       .nodata(404)
       .networkCode(netCodeQuery)
@@ -262,6 +263,7 @@ function doPlotHeli(config) {
       .endTime(hash.timeRange.start.plus(sp.luxon.Duration.fromMillis(3600*1000)));
     channelPromise = channelQuery.queryChannels();
   } else {
+    // NOT TODO: NOT IMPORTANT
     // or load from local stationxml file
     const fetchInitOptions = sp.util.defaultFetchInitObj(sp.util.XML_MIME);
     const url = "metadata.staxml";
@@ -292,6 +294,7 @@ function doPlotHeli(config) {
     let chanTR = [];
     hash.chanTR = chanTR;
     hash.netArray = netArray;
+    // TODO: Make sure we don't need this
     const matchChannels = sp.stationxml.findChannels(netArray,
       '.*', config.station, config.locCode, `${config.bandCode}${config.instCode}[${config.orientationCode}${config.altOrientationCode}]`);
     console.log(`search sta: ${config.station}`)
@@ -302,6 +305,7 @@ function doPlotHeli(config) {
     }
     for (let c of matchChannels) {
       if (c.channelCode.endsWith(config.orientationCode) || (config.altOrientationCode && c.channelCode.endsWith(config.altOrientationCode))) {
+        // TODO: How to get display data from channel and time window
         chanTR.push(sp.seismogram.SeismogramDisplayData.fromChannelAndTimeWindow(c, hash.timeRange));
       }
     }
@@ -340,6 +344,7 @@ function doPlotHeli(config) {
         MINMAX_URL, "%n/%s/%Y/%j/%n.%s.%l.%c.%Y.%j.%H");
       minMaxSddList = minMaxSddList.map( ct => {
         let chanCode = "L"+hash.minMaxInstCode+ct.channel.channelCode.charAt(2);
+        // TODO: This is minmax thing... Do we need it?
         let fake = new sp.stationxml.Channel(ct.channel.station, chanCode, ct.channel.locationCode);
         fake.sampleRate = 2;
         hash.heliDataIsMinMax = true;
