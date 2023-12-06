@@ -3,12 +3,10 @@ import { DateTime, Duration, Interval } from "luxon";
 
 
 const staList = ['BARN', 'BIRD', 'C1SC', 'CASEE', 'CSB', 'HAW', 'HODGE', 'JKYD', 'JSC', 'PAULI', 'SUMMV', 'TEEBA'];
-const DEFAULT_FIXED_AMP = 10000;
 
 const DEFAULT_DURATION = "P1D";
 const SeismogramDisplayData = sp.seismogram.SeismogramDisplayData;
 const HelicorderConfig = sp.helicorder.HelicorderConfig;
-const Helicorder = sp.helicorder.Helicorder;
 
 const MINMAX_URL = "https://eeyore.seis.sc.edu/minmax";
 const MSEED_URL = "https://eeyore.seis.sc.edu/mseed";
@@ -51,7 +49,6 @@ state.station = 'BIRD';
 
 let savedData = {
   config: state,
-
 };
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -204,9 +201,7 @@ function doPlot(config) {
 function doPlotHeli(config) {
   document.querySelector("#heli").setAttribute("style", "display: block;");
   document.querySelector("#seismograph").setAttribute("style", "display: none;");
-  const ONE_MILLISECOND = Duration.fromMillis(1);
 
-  let nowHour = sp.util.isoToDateTime("now").endOf('hour').plus({milliseconds: 1});
   let hash = createEmptySavedData(config);
 
   if ( ! config.station) {
@@ -245,34 +240,16 @@ function doPlotHeli(config) {
   document.querySelector("span.endTime").textContent =
     `${hash.timeRange.end.toFormat('(ooo), MMM d, yyyy HH:mm')} [GMT]`;
   let channelPromise;
-  if (true) {
-    // default load from fdsnws
-    let channelQuery = new sp.fdsnstation.StationQuery()
-      .nodata(404)
-      .networkCode(netCodeQuery)
-      .stationCode(staCodeQuery)
-      .locationCode(locCodeQuery)
-      .channelCode(chanCodeQuery)
-      .startTime(hash.timeRange.start)
-      .endTime(hash.timeRange.start.plus(Duration.fromMillis(3600*1000)));
-    channelPromise = channelQuery.queryChannels();
-  } else {
-    // or load from local stationxml file
-    const fetchInitOptions = sp.util.defaultFetchInitObj(sp.util.XML_MIME);
-    const url = "metadata.staxml";
-    channelPromise = sp.util.doFetchWithTimeout(url, fetchInitOptions)
-      .then(function (response) {
-        if (response.status === 200 || response.status === 0) {
-          return response.text();
-        } else {
-          // no data
-          throw new Error("No data");
-        }
-      }).then(rawXmlText => {
-        const rawXml = new DOMParser().parseFromString(rawXmlText, "text/xml");
-        return sp.stationxml.parseStationXml(rawXml);
-      });
-  }
+  // default load from fdsnws
+  let channelQuery = new sp.fdsnstation.StationQuery()
+    .nodata(404)
+    .networkCode(netCodeQuery)
+    .stationCode(staCodeQuery)
+    .locationCode(locCodeQuery)
+    .channelCode(chanCodeQuery)
+    .startTime(hash.timeRange.start)
+    .endTime(hash.timeRange.start.plus(Duration.fromMillis(3600*1000)));
+  channelPromise = channelQuery.queryChannels();
   return channelPromise
   .catch(e => {
       showError(`Error Loading Data, retrying... ${e}`);
@@ -316,7 +293,6 @@ function doPlotHeli(config) {
     }
     return hash;
   }).then(hash => {
-    let chantrList;
     let minMaxSddList = [];
     let rawDataList = [];
     hash.chanTR
@@ -360,15 +336,8 @@ function doPlotHeli(config) {
     if ( ! gotData) {
       showError("No Data Found MSeedArchive");
       console.log("min max data from miniseedArchive found none");
-      if (false && hash.chanTR.length > 0) {
-        let dsQ = new sp.fdsndataselect.DataSelectQuery()
-          .nodata(404);
-        hash.chantrList = dsQ.postQuerySeismograms(hash.chanTR);
-        hash.query = dsQ;
-      } else {
-        hash.chantrList = [];
-        hash.query = null;
-      }
+      hash.chantrList = [];
+      hash.query = null;
     }
     return Promise.all([hash, hash.chantrList ]).then(hArr =>{
       hArr[0].chantrList = hArr[1];
@@ -569,7 +538,6 @@ function loadDataReal(sddList) {
     }
     return ct;
   }).filter(sdd => !!sdd);
-  let CO_sddList = beforeNowChanTR.filter(sdd => sdd.networkCode === 'CO');
   let other_sddList = beforeNowChanTR.filter(sdd => sdd.networkCode !== 'CO');
   const dsQuery = new sp.fdsndataselect.DataSelectQuery();
   return Promise.all([
@@ -805,7 +773,6 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
   });
   document.querySelector("button#reload").addEventListener("click", () => {
     const orgDisp = document.querySelector("sp-organized-display");
-    const timeRangesToReload = [];
     const dispElements = orgDisp.getDisplayItems();
     dispElements.forEach(orgDispItem => {
       if (orgDispItem.plottype.startsWith(sp.organizeddisplay.SEISMOGRAPH)) {
@@ -822,7 +789,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
         });
       }
     });
-    loadDataReal(orgDisp.seisData).then(sddList => {
+    loadDataReal(orgDisp.seisData).then(() => {
       orgDisp.draw();
     });
   });
@@ -838,7 +805,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
     button.textContent = sta;
     button.value = sta;
     button.checked = sta===config.station;
-    button.addEventListener('click', event => {
+    button.addEventListener('click', () => {
       config.station = sta;
       loadAndPlotFun(config);
     });
@@ -857,7 +824,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
     button.textContent = orient;
     button.value = orient;
     button.checked = orient===config.orientationCode;
-    button.addEventListener('click', event => {
+    button.addEventListener('click', () => {
       let newOrientationCode = orient;
       if (newOrientationCode.length > 1) {
         config.altOrientationCode = newOrientationCode.slice(-1);
@@ -894,7 +861,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
       button.textContent = bandinst;
       button.value = bandinst;
       button.checked = bandinst.charAt(0)===config.bandCode && bandinst.charAt(1)===config.instCode;
-      button.addEventListener('click', event => {
+      button.addEventListener('click', () => {
         config.bandCode = bandinst.charAt(0);
         config.instCode = bandinst.charAt(1);
         console.log(`click ${config.bandCode}${config.instCode}`);
@@ -914,28 +881,28 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
       button.textContent = loc;
       button.value = loc;
       button.checked = loc===config.locCode;
-      button.addEventListener('click', event => {
+      button.addEventListener('click', () => {
         config.locCode = locCode;
         console.log(`click ${config.locCode} ${config.bandCode}${config.instCode}`);
         loadAndPlotFun(config);
       });
     });
 
-  document.querySelector("button#loadNow").addEventListener("click",  function(d) {
+  document.querySelector("button#loadNow").addEventListener("click",  () => {
     config.endTime = getNowTime().toISO();
     console.log(`now ${config.endTime}`);
     updateDateChooser(config);
     loadAndPlotFun(config);
   });
 
-  document.querySelector("button#loadToday").addEventListener("click",  function(d) {
+  document.querySelector("button#loadToday").addEventListener("click",  () => {
     config.endTime = DateTime.utc().endOf('day').plus({millisecond: 1}).toISO();
     console.log(`today ${config.endTime}`);
     updateDateChooser(config);
     loadAndPlotFun(config);
   });
 
-  document.querySelector("button#loadPrev").addEventListener("click",  function(d) {
+  document.querySelector("button#loadPrev").addEventListener("click",  () => {
     let e = config.endTime;
     if (  !e || e === 'now' ) {
       e = getNowTime();
@@ -948,7 +915,7 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
     loadAndPlotFun(config);
   });
 
-  document.querySelector("button#loadNext").addEventListener("click",  function(d) {
+  document.querySelector("button#loadNext").addEventListener("click",  () => {
     let e = config.endTime;
     if ( !e || e === 'now' ) {
       e = getNowTime();
@@ -961,31 +928,31 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
     loadAndPlotFun(config);
   });
 
-  document.querySelector("input#maxAmp").addEventListener("click",  function(d) {
+  document.querySelector("input#maxAmp").addEventListener("click",  () => {
       handleAmpChange(config, "max", redrawFun);
     });
 
-  document.querySelector("input#fixedAmp").addEventListener("click",  function(d) {
+  document.querySelector("input#fixedAmp").addEventListener("click",  () => {
       let value = Number(document.querySelector("input#fixedAmpText").value);
       handleAmpChange(config, value, redrawFun);
     });
-  document.querySelector("input#fixedAmpText").addEventListener("keypress",  function(e) {
+  document.querySelector("input#fixedAmpText").addEventListener("keypress",  () => {
       if(e.keyCode === 13) {
         // return  is 13
         let value = Number(document.querySelector("input#fixedAmpText").value);
         handleAmpChange(config, value, redrawFun);
       }
   });
-  document.querySelector("input#fixedAmpText").addEventListener("change",  function(e) {
+  document.querySelector("input#fixedAmpText").addEventListener("change",  () => {
     let value = Number(document.querySelector("input#fixedAmpText").value);
     handleAmpChange(config, value, redrawFun);
   });
 
-  document.querySelector("input#percentAmp").addEventListener("click",  function(d) {
+  document.querySelector("input#percentAmp").addEventListener("click",  () => {
       let value = document.querySelector("input#percentAmpSlider").value;
       handleAmpChange(config, `${value}%`, redrawFun);
     });
-  document.querySelector("#percentAmpSlider").addEventListener("input",  function(d) {
+  document.querySelector("#percentAmpSlider").addEventListener("input",  () => {
     let value = Number(document.querySelector("#percentAmpSlider").value);
     handleAmpChange(config, `${value}%`, redrawFun);
   });
