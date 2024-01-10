@@ -4,13 +4,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   mode: "development",
   entry: {
-    index: './src/index.js'
+    index: './src/realtime.js',
   },
   devtool: 'inline-source-map',
   plugins: [
     new HtmlWebpackPlugin({
       title: 'Output Management',
-      template: 'src/index.html'
+      template: 'src/realtime.html'
     })
   ],
   output: {

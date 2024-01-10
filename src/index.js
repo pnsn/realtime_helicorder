@@ -637,6 +637,8 @@ function updateHeliAmpConfig(hash, heliConfig) {
   } else if (typeof hash.config.amp === 'string' && hash.config.amp.endsWith('%')) {
     heliConfig.fixedAmplitudeScale = [0,0];
     const percent = Number(hash.config.amp.substring(0, hash.config.amp.length-1))/100;
+    console.log("Updating using " + (percent*100) + "%...");
+    console.log("maxVariation = " + (percent*(hash.seisData.max-hash.seisData.mean)));
     heliConfig.maxVariation = percent*(hash.seisData.max-hash.seisData.mean);
   } else if (Number.isFinite(hash.config.amp)) {
     heliConfig.fixedAmplitudeScale = [0,0];
@@ -1001,7 +1003,6 @@ function setupEventHandlers(config, loadAndPlotFun, redrawFun) {
 }
 
 function updatePageForConfig(currentConfig) {
-  console.log(JSON.parse(JSON.stringify(document.children)));
   // minmax
   document.querySelector("input#minmax").checked = currentConfig.dominmax;
 

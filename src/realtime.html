@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <title>
+   Realtime Helicorder Test (UW 2022)
+  </title>
+
+ </head>
+
+  <body>
+    <h3>Realtime Helicorder</h3>
+    <h3>Realtime display for <span id="channel"></span></h3>
+    <div>
+      <span id="starttime"></span>
+      <span id="endtime"></span>
+      <span id="currentTime"></span>
+    </div>
+
+    <button id="disconnect">Disconnect</button>
+    <button id="pause">Pause</button>
+    Packets: <span id="numPackets">0</span>
+    <div>
+      <span>Amplitude:</span>
+      <input type="range" name="amp-range" id="amp-range">
+    </div>
+    <div id="realtime">
+    </div>
+
+    <div id="debug">
+    </div>
+    <script src="./realtime.js" type="module"></script>
+  </body>
+
+</html>
